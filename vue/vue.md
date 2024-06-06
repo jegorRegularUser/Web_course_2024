@@ -81,9 +81,12 @@ npm init vite@latest project-name
 ![alt text](./assets/image-6.png)
 
 Они и служать для нас сразу html js и css файлами
+
 И для этого они имеют соответсвующие теги
 ``` js
- <tempate> <script> <style>
+<tempate></tempate> 
+<script></script>  
+<style></style>
 ```
 И для удобства давайте удалим лишний код
 
@@ -95,6 +98,7 @@ npm init vite@latest project-name
 
 ### Директивы
 Во vue есть такое понятие как директивы - это аттрибуты в тегах, которые позволяют вносить логику в html часть и свызывать ее с js частью
+
 Вот основные директивы
 #### v-if/v-else/v-else-if:
 Эти директивы используются для условного отображения элементов.
