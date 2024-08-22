@@ -152,6 +152,76 @@ function App() {
 }
 export default App;
 ```
+
+### Events(события)
+И я хочу начать с самого легкого - взаимодействия с элементами.
+Покажу это на примере кнопки, в jsмы добавляли логику кнопке вот так:
+``` js
+document.querySelector('btn').addEventListener('click',()=>{console.log()})
+```
+В react же это делать теперь проще, потому что событие и реакцию на него мы будет прописывать сразу же в теге кнопки
+``` js
+function App() {
+  return (
+     <button onClick={()=>{console.log('Ты на меня нажал!')}} >
+        Нажми меня
+      </button>
+  );
+}
+export default App;
+```
+У каждого элемента теперь есть события в виде аттрибутов, и также можно вместо стрелочной функции просто писать название уже созданной.
+``` js
+function App() {
+   const  clickOnMeBtnHandler = () =>{console.log('Ты на меня нажал!')}
+  return (
+     <button onClick={clickOnMeBtnHandler} >
+        Нажми меня
+      </button>
+  );
+}
+export default App;
+```
+И в среде разработчиков принято, не считая общей понятности названий, добавлять к функциям, которые будут использоваться при нажатии кнопок, приписку Handler.
+
+Самих событий бесчисленное множество и каждое событие как и в js возвращает соответсвующий event.
+![alt text](./assets/eventAmountExample1.png)
+![alt text](./assets/eventAmountExample2.png)
+
+### State(состояния)
+
+Основным преимуществом фреймворков является реактивность - способность изменять dom сайта без обновления страницы, в react это можно реализовать за счет использвоания специальных функций - хуков, а конкретней хука useState.
+
+сам по себе это хук возвращает массив, имеющий изменяемое состояние stateName и функцию его изменяющее setStateName, но лучше все показать на примере:
+``` js
+import { useState } from "react";
+function App() {
+  const [count, setCount] = useState(0);// дефолтным значением count является 0, так как мы вложили это в useState
+  
+  return (
+    <div>
+      <button onClick={setCount(count+1)}>Нажимая на меня ты увеличиваешь число {count}</button>
+    </div>
+  );
+}
+```
+И данный пример выдаст ошибку, потому что при изменении count происходит перестройка dom, но, так-как мы вложили button setCount с аргументом, то эта функция сразу же вызывается, что обновляет dom, что обновляет button, что вызывает функцию setCount, что обновляет dom... И чтобы это решить нужно либо вынести все в отдельную функцию, либо сразу же вложить setCount в стрелочную функцию прямо в button
+``` js
+import { useState } from "react";
+function App() {
+  const [count, setCount] = useState(0);
+  
+  return (
+    <div>
+      <button onClick={()=>{setCount(count+1)}}>Нажимая на меня ты увеличиваешь число {count}</button>
+    </div>
+  );
+}
+```
+![alt text](./assets/btnstateexample.png)
+И вот, теперь мы можем добавлять реактивность на сайт
+
+
 ### Props
 Все это, конечно, хорошо, но что делать с ситуацией, когда нам нужно передать данные по компонентам? 
 Рrops выступит решением, потому что это аргументы создаваемых функций, пример:
@@ -189,7 +259,7 @@ export default App;
 ``` js
 //ShopItem.js
 function ShopItem(props) {//здесь мы получаем данные в виде объекта props
-  const { brand, title, description, descriptionFull, price } = props.item;
+  const { brand, title, description, descriptionFull, price } = props.item; //props имеет поля - те самые аттрибуты, в которые мы передавали необходимые данные
   return (
     <div class="main-content">
       <h2>{brand}</h2>
@@ -227,67 +297,201 @@ function ShopItem( { item } ) {
 }
 export default ShopItem;
 ```
-### Events(события)
-Следующим шагом станет взаимодействие с кнопками, в js это делалось вот так:
+`
+Props предназначены только для чтения.
+Ни в каком случае не следует их изменять!
+`
+#### Поднятие данных в родительский компонент
+И после того как мы передали данные вниз в дочерний компонент, возникает вопрос: а как тогда их поднять наверх?
+Так как props нельзя менять, мы можем просто создать функцию, которая и будет принимать в себя необходимые данные:
 ``` js
-document.querySelector('btn').addEventListener('click',()=>{console.log()})
+function App() {
+const getDataFromShopItem = (data)=>{
+  console.log('Из ShopItem мы получили: ', data)
+}
+  return (
+    <div>
+      <ShopItem getData={getDataFromShopItem}/>
+    </div>
+  );
+}
+
+export default App;
 ```
-В react же это делать теперь проще, потому что событие и реакцию на него мы будет прописывать сразу же в теге кнопки
+``` js
+function ShopItem({getData}) {
+    const data = 'данные из ShopItem'
+    getData(data);
+    return (
+      <div>
+      </div>
+    );
+  }
+  export default ShopItem;
+  
+```
+![alt text](./assets/propsConsoleLog.png)
+
+#### Атрибуты без значений
+Также мы можем писать аттрибуты без значения, они автоматически будут принимать значение true:
 ``` js
 function App() {
   return (
-     <button onClick={()=>{console.log('Ты на меня нажал!')}} >
-        Нажми меня
-      </button>
+    <>
+    <ShopItem colored/>
+    <ShopItem colored={true}/>
+    <ShopItem colored={false}/>
+    </>
   );
 }
 export default App;
 ```
-У каждого элемента теперь есть события в виде аттрибутов, и также можно вместо стрелочной функции просто писать название уже созданной.
+``` js
+function ShopItem({colored}) {
+    return (
+      <div style={{color:`${colored? 'blue': 'black'}`}}>
+        {`${colored}`}
+      </div>
+    );
+  }
+  export default ShopItem;
+```
+![alt text](./assets/noValueAttributeProppsExample.png)
+
+#### defaultProps
+Свойство компонента defaultProps позволяет задать значения атрибутов по умолчанию.
+Для этого достаточно присвоить объект в это свойство компонента, где ключ будет именем атрибута, а значение — значением, которое будет передаваться в props компонента, если атрибут не задан.
+``` js
+function UserInfo({ name, img }) {
+  return (
+    <div className="card">
+      <img src={img} className="card-img-top" alt="..." />
+      <div className="card-body">
+        <h6 className="card-title">{name || "Гость"}</h6>
+      </div>
+    </div>
+  );
+}
+
+UserInfo.defaultProps = {
+  img: "https://dummyimage.com/100x100/000/ffffff&text=default",
+};
+export default UserInfo;
+```
+
+### Некоторые безтемные примеры 
+#### Списки
+Списки достаточно часто используемый элемент, имеющий особенность в jsx, а именно необходимость индетификации каждого элемента списка с помощью аттрибута key:
+``` js
+<ul>
+  <li key="1">Ларичев Иван</li>
+  <li key="2">Морозов Алексей</li>
+  <li key="3">Бурмистров Роман</li>
+</ul>
+<ul>
+  <li key="1">Болдырева Анастасия</li>
+  <li key="2">Чичев Александр</li>
+  <li key="3">Егоров Николай</li>
+</ul>
+```
+И бывают ситуации, когда мы имеем массив данных и нам нужно превратить его в список, для этого мы спокойно можем использовать метод map:
+``` js
+function ShopItem() {
+  const arrOfData = [
+    "Ларичев Иван",
+    "Морозов Алексей",
+    "Иванова Анна",
+    "Сидоров Николай",
+    "Петрова Светлана",
+    "Кузнецов Роман",
+    "Федорова Екатерина",
+    "Смирнов Сергей",
+    "Романов Дмитрий",
+    "Зайцева Юлия",
+  ];
+  const listOfNames = arrOfData.map((el) => {
+    return 
+    <li key={el + Math.random()}> // Люди, знающие метод map, могут заметить, что можно было бы использовать index
+      {el}                       // Однако это плохая практика - это может помешать нормальной работе алгоритма сопоставления в React(и в других фреймворках)
+    </li>;                      // Лучше всего использовать собственные текстовые id
+  });
+
+  return (
+    <ul >
+     {listOfNames}
+    </ul>
+  );
+}
+export default ShopItem;
+
+```
+#### Тернарный оператор
+Тернарным оператором вы будете пользоваться постоянно, из-за того, что jsx допускает только expressions:
+Переключение стилей:
+``` js
+    return (
+      <div style={{color:`${colored? 'blue': 'black'}`}}>
+        {`${colored}`}
+      </div>
+    );
+    ...
+    <button
+			className={`enter ${players.length < 5 ? 'noDisplay' : ''}`}
+			onClick={startGame}
+		>
+			Начать игру
+		</button>
+```
+Переключение компонентов(или их не включение):
 ``` js
 function App() {
-   const  clickOnMeBtnHandler = () =>{console.log('Ты на меня нажал!')}
-  return (
-     <button onClick={clickOnMeBtnHandler} >
-        Нажми меня
+  const selected = "Portfolio";
+  const btns = ["Portfolio", "Layouts"].map((el, index) => {
+    return (
+      <button
+        className={el === selected ? "btn styled" : "btn"}
+        onClick={()=>{console.log(el)}}
+        key={index}
+      >
+        {el}
       </button>
+    );
+  });
+  return (
+    <div className="App">
+      <div className="tollbar">{btns}</div>
+      {selected==="Portfolio" ? <Portfolio />:''}
+      {selected==="Layouts" ? <Store/> :''}
+    </div>
   );
 }
 export default App;
 ```
-И в среде разработчиков принято, не считая общей понятности названий, добавлять к функциям, которые будут использоваться при нажатии кнопок, приписку Handler
-### State(состояния)
-
-Основным преимуществом фреймворков является реактивность - способность изменять dom сайта без обновления страницы, в react это можно реализовать за счет использвоания специальных функций - хуков, а конкретней хука useState.
-
-сам по себе это хук возвращает массив, имеющий изменяемое состояние stateName и функцию его изменяющее setStateName, но лучше все показать на примере:
+#### Использование высшего булина
+Последний пример с 'не включением компонентов' можно сделать по-умнее, буквально используя логику:
 ``` js
-import { useState } from "react";
 function App() {
-  const [count, setCount] = useState(0);// дефолтным значением count является 0, так как мы вложили это в useState
-  
+  const selected = "Portfolio";
+  const btns = ["Portfolio", "Layouts"].map((el, index) => {
+    return (
+      <button
+        className={el === selected ? "btn styled" : "btn"}
+        onClick={()=>{console.log(el)}}
+        key={index}
+      >
+        {el}
+      </button>
+    );
+  });
   return (
-    <div>
-      <button onClick={setCount(count+1)}>Нажимая на меня ты увеличиваешь число {count}</button>
+    <div className="App">
+      <div className="tollbar">{btns}</div>
+      {selected==="Portfolio" && <Portfolio />} // при условии, что нам не нужно иметь альтернативу при false значении
+      {selected==="Layouts" && <Store/> }
     </div>
   );
 }
+export default App;
 ```
-И данный пример выдаст ошибку, потому что при изменении count происходит перестройка dom, но, так-как мы вложили button setCount с аргументом, то эта функция сразу же вызывается, что обновляет dom, что обновляет button, что вызывает функцию setCount, что обновляет dom... И чтобы это решить нужно либо вынести все в отдельную функцию, либо сразу же вложить setCount в стрелочную функцию прямо в button
-``` js
-import { useState } from "react";
-function App() {
-  const [count, setCount] = useState(0);
-  
-  return (
-    <div>
-      <button onClick={()=>{setCount(count+1)}}>Нажимая на меня ты увеличиваешь число {count}</button>
-    </div>
-  );
-}
-```
-![alt text](./assets/btnstateexample.png)
-И вот, теперь мы можем добавлять реактивность на сайт
-
-
-В будущих обновлениях: как работать с input, пример с тернарным и с map, формы, роутер, props с typescript
+#### input, ref
+В будущих обновлениях: как работать с input, формы, роутер, использование вместе с typescript(по сути здесь просто рассказать, что можно использовать typescript и разграничить приложение с примерами на хуках и функциях)
