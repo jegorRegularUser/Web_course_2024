@@ -494,5 +494,223 @@ function App() {
 }
 export default App;
 ```
-#### input, ref
-В будущих обновлениях: как работать с input, формы, роутер, использование вместе с typescript(по сути здесь просто рассказать, что можно использовать typescript и разграничить приложение с примерами на хуках и функциях)
+#### Работа с инпутами в React
+ В React есть концепция controlled и uncontrolled компонентов.
+
+``` js
+function ControlledInput() {
+  const [value, setValue] = React.useState('');
+
+  const handleChange = (event) => {
+    setValue(event.target.value);
+  };
+
+  return (
+    <input type="text" value={value} onChange={handleChange} />
+  );
+}
+
+function UncontrolledInput() {
+  const inputRef = React.useRef(null);
+
+  const handleSubmit = () => {
+    console.log('Input value:', inputRef.current.value);
+  };
+
+  return (
+    <div>
+      <input type="text" ref={inputRef} />
+      <button onClick={handleSubmit}>Submit</button>
+    </div>
+  );
+}
+```
+
+В controlled компоненте значение инпута хранится в состоянии компонента. Это позволяет легко контролировать и обновлять значение инпута. В uncontrolled компоненте значение инпута хранится в DOM-элементе, и для доступа к нему используется ref.
+
+#### Использование ref в React
+ref в React - это специальный объект, который позволяет получить прямой доступ к элементу DOM или к инстансу компонента. Это может быть полезно в следующих случаях:
+
+1. Фокусировка на элементе: Вы можете использовать ref для фокусировки на элементе, например, на инпуте, при загрузке страницы или при нажатии на кнопку.
+2. Взаимодействие с DOM-элементами: Если вам нужно получить размеры, положение или другие свойства DOM-элемента, ref позволит вам сделать это.
+3. Интеграция с сторонними библиотеками: Если вы используете сторонние библиотеки, которым требуется прямой доступ к DOM-элементам, ref поможет вам это реализовать.
+
+Стоит отметить, что ref не следует использовать для работы с инпутами, если это не требуется. В большинстве случаев вы можете обойтись без него, используя state. Но это не касается инпутов файлов - там уже придеться использовать ref для прямой передачи файла.
+
+#### Формы
+По своей сути, все, что вам нужно знать для работы с формами - это понимание, что в state можно для удобства закладывать объекты и что есть событие onSubmit. 
+В качестве примера держите простой календарь активностей.
+``` js
+import React, { useState } from "react";
+import Form from "./Form"; //функциональный подход подразумевает максимальной разделение на состовные части
+import Data from "./Data";// так что тут steps-главный и хранящий состояния компонент, form - отвечает за отображение формы и ее логику, data - отвечает за хранимые данные календаря
+import "../../App.css";
+
+const Steps = () => {
+  const [data, setData] = useState([]);
+  const [dateInvalid, setDateInvalid] = useState(false);
+  const [distanceInvalid, setDistanceInvalid] = useState(false);
+
+  const handleDataSubmit = (newRecord) => {
+    const index = data.findIndex(
+      (el) => el.date.join() === newRecord.date.join()
+    );
+
+    const updatedData = [...data];
+
+    if (index === -1) {
+      updatedData.push(newRecord);
+    } else {
+      const updatedRecord = {
+        ...updatedData[index],
+        distance: updatedData[index].distance + newRecord.distance,
+      };
+      updatedData[index] = updatedRecord;
+    }
+
+    setData(updatedData.sort((a, b) => {
+      const [dayA, monthA, yearA] = a.date;
+      const [dayB, monthB, yearB] = b.date;
+
+      if (yearA !== yearB) return yearB - yearA;
+      if (monthA !== monthB) return monthB - monthA;
+      return dayB - dayA;
+    }));
+  };
+
+  const handleDelete = (dateToDelete) => {
+    setData((prevData) =>
+      prevData.filter((item) => item.date.join() !== dateToDelete.join())
+    );
+  };
+
+  return (
+    <div className="steps">
+      <Form 
+        onDataSubmit={handleDataSubmit}
+        setDateInvalid={setDateInvalid}
+        setDistanceInvalid={setDistanceInvalid}
+        distanceInvalid={distanceInvalid}
+        dateInvalid={dateInvalid}
+      />
+      <Data data={data} onDelete={handleDelete} />
+    </div>
+  );
+};
+
+export default Steps;
+```
+``` js
+import React, { useState } from "react";
+
+const Form = ({ onDataSubmit, setDateInvalid, setDistanceInvalid, dateInvalid, distanceInvalid }) => {
+
+  const [form, setForm] = useState({//в моей форме есть всег два инпута и, соответственно, для них нужны два состояния
+    date: "",
+    distance: "",
+  });
+
+  const handleSubmit = (e) => { //обработчик подтверждения формы
+    e.preventDefault();
+    const { date, distance } = form;
+    const [day, month, year] = date.split(".").map(Number);
+
+    if (isNaN(day) || isNaN(month) || isNaN(year) || day < 1 || day > 31 || month < 1 || month > 12) {
+      setDateInvalid(true);
+      if (distance === "") {
+        setDistanceInvalid(true);
+      }
+      return;
+    }
+    
+    if (distance === "") {
+      setDistanceInvalid(true);
+      return;
+    }
+
+    const record = { date: [day, month, year], distance: +distance };
+    onDataSubmit(record); 
+    setForm({ date: "", distance: "" });//благодаря подходу с одним состоянием - нам легко очищать форму
+  };
+
+  const handleInputChange = (e) => {//для изменения состояния нам не придеться прописывать несколько обработчиков
+    const { name, value } = e.target;
+    setDateInvalid(false);
+    setDistanceInvalid(false);
+    setForm((prevForm) => ({
+      ...prevForm,
+      [name]: value,
+    }));
+  };
+
+  return (
+    <form className="form" onSubmit={handleSubmit}>
+        <div className="input-wrap">
+          <div>Дата (ДД.ММ.ГГ)</div>
+          <input
+            type="text"
+            name="date"
+            value={form.date}
+            onChange={handleInputChange}
+            placeholder="ДД.ММ.ГГ"
+          />
+          <div className={dateInvalid ? "invalid-text" : "no-display"}>
+            Проверьте корректность даты
+          </div>
+        </div>
+        <div className="input-wrap">
+          <div>Пройдено км</div>
+          <input
+            type="text"
+            name="distance"
+            maxLength={8}
+            value={form.distance}
+            onChange={handleInputChange}
+            placeholder="Км"
+          />
+          <div className={distanceInvalid ? "invalid-text" : "no-display"}>
+            Необходимо ввести дистанцию
+          </div>
+        </div>
+        <button type="submit">OK</button>
+      </form>
+  );
+};
+
+export default Form;
+```
+``` js
+import React from "react";
+
+const Data = ({ data, onDelete }) => {
+  return (
+    <div className="list">
+    <div className="titles">
+      <span>Дата (ДД.ММ.ГГ)</span>
+      <span>Пройдено км</span>
+      <span>Действия</span>
+    </div>
+    <ul>
+      {data.map((item) => (
+        <li key={item.date.join(".")}>
+          <span>{item.date.join(".")}</span>
+          <span>{item.distance.toFixed(1)}</span>
+          <span>
+            <button
+              className="delete-btn"
+              onClick={() => onDelete(item.date)}
+            >
+              ✘
+            </button>
+          </span>
+        </li>
+      ))}
+    </ul>
+  </div>
+  );
+};
+
+export default Data;
+```
+![alt text](./assets/formexzmple.png)
+В будущих обновлениях:  роутер, useEffect( работа с таймером и асинхронкой), продвинутые хуки(типо useReducer и useMemo) использование вместе с typescript(по сути здесь просто рассказать, что можно использовать typescript и разграничить приложение с примерами на хуках и функциях)
