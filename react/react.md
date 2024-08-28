@@ -714,5 +714,174 @@ export default Data;
 ```
 ![alt text](./assets/formexzmple.png)
 
-#### Router
-В будущих обновлениях:  роутер, useEffect( работа с таймером и асинхронкой), продвинутые хуки(типо useReducer и useMemo) использование вместе с typescript(по сути здесь просто рассказать, что можно использовать typescript и разграничить приложение с примерами на хуках и функциях)
+#### React Router
+##### Для чего используется React Router?
+React Router - это библиотека, которая позволяет создавать однолетевые веб-приложения(single page application) с использованием React. 
+Она используется для:
+* Создания многостраничных приложений на React
+* Управления навигацией между страницами приложения
+* Разделения кода приложения на разные модули
+* Обеспечения доступа к разным частям приложения по URL-адресу
+
+##### Установка React Router
+
+Для установки React Router вы можете использовать npm или yarn:
+
+```
+npm install react-router-dom
+```
+```
+yarn add react-router-dom
+```
+
+##### Основные компоненты React Router
+
+Давайте рассмотрим простой пример использования React Router:
+
+``` js
+import { BrowserRouter as Router, Route, Link } from 'react-router-dom';
+
+const Home = () => <h1>Главная страница</h1>;
+const About = () => <h1>О нас</h1>;
+const Contact = () => <h1>Контакты</h1>;
+
+const App = () => (
+  <Router>
+    <div>
+      <nav>
+        <ul>
+          <li>
+            <Link to="/">Главная</Link>
+          </li>
+          <li>
+            <Link to="/about">О нас</Link>
+          </li>
+          <li>
+            <Link to="/contact">Контакты</Link>
+          </li>
+        </ul>
+      </nav>
+      <Routes>
+        <Route path="/" exact element={<Home/>} />
+        <Route path="/about" element={<About/>} />
+        <Route path="/contact" element={<Contact/>} />
+      </Routes>
+    </div>
+  </Router>
+);
+```
+
+В этом примере мы создаем 4 компонента: Основной App и три для маршрутизации Home, About и Contact. 
+
+Компонент BrowserRouter оборачивает все компоненты маршрутизации, обеспечивая использование HTML5 History API.
+
+Компонент Link используется для создания ссылок между разными частями приложения. Он автоматически добавляет правильный href к ссылке, не перезагружая страницу. 
+
+Компонент Route определяет, какой компонент должен быть отображен, когда URL-адрес соответствует указанному пути. Атрибут exact указывает, что маршрут должен точно соответствовать указанному пути(обычно используется для компонентов, которые пользователь видет при открытие сайта).
+Компонент Routes используется как обертка для route и без него компилятор просто может начать ругаться.
+
+##### Вложенные маршруты
+
+React Router также поддерживает вложенные маршруты, что позволяет создавать более сложные и иерархические структуры приложения. Вы можете вкладывать маршруты внутри других маршрутов, создавая многоуровневую навигацию.
+
+``` js
+import { BrowserRouter as Router, Route, Link } from 'react-router-dom';
+
+const Dashboard = () => (
+  <div>
+    <h1>Панель управления</h1>
+    <nav>
+      <ul>
+        <li>
+          <Link to="/dashboard/profile">Профиль</Link>
+        </li>
+        <li>
+          <Link to="/dashboard/settings">Настройки</Link>
+        </li>
+      </ul>
+    </nav>
+    <Routes>
+      <Route path="/profile" element={<Profile/>} />   // route автоматически берет начало верхнего роута, так что вместо
+      <Route path="/settings" element={<Settings/>} />// /dashboard/profile можно просто писать оставшийся путь
+    </Routes>
+  </div>
+);
+
+const App = () => (
+  <Router>
+    <div>
+      <Route path="/dashboard/*" element={<Dashboard/>} /> //после пути, если мы знаем, что дальше будут еще роуты, мы должны добавить /* 
+    </div>
+  </Router>
+);
+```
+##### useLocation
+В библеотеке react-router-dom имеется хук useLocation, который возвращает нынешнее 'местоположение' страницы в виде объекта, из которого самым важным для нас будет поле pathname.
+``` js
+const location = useLocation();
+console.log(location)
+```
+![alt text](./assets/useLocationExample.png)
+
+##### Пример использования библеотеки
+И уже по традиции маленькое приложение, использующее все вышеперечисленное
+```js
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import './App.css';
+import Taxi from './components/menu/Taxi';
+function App() {
+  return (
+      <BrowserRouter>
+      <Routes>
+          <Route path="/taxi/*" exact element={<Taxi/>} />
+      </Routes>
+      </BrowserRouter>
+  );
+}
+export default App;
+```
+``` js
+import { Route, Routes } from "react-router-dom";
+import DriftPage from "./DriftPage";
+import ForzaPage from "./ForzaPage";
+import HomePage from "./HomePage";
+import TimeAttackPage from "./TimeAttackPage";
+import Menu from "./Menu";
+
+export default function Taxi() {
+  return (
+    <div>
+      <Menu />
+      <div className="page">
+        <Routes>
+          <Route path="/" element={<HomePage/>} />
+          <Route path="/drift" element={<DriftPage/>} />
+          <Route path="/timeattack" element={<TimeAttackPage/>} />
+          <Route path="/forza" element={<ForzaPage/>} />
+        </Routes>
+      </div>
+    </div>
+  );
+}
+```
+
+``` js
+import { Link, useLocation } from 'react-router-dom'; 
+
+ function Menu() {
+    const location = useLocation();
+    console.log(location)
+  return (
+    <nav className="menu">
+      <Link  className={`menu__item ${location.pathname === "/taxi" ? "menu__item-active" : ""}`} to="/taxi">Главная</Link>
+      <Link className={`menu__item ${location.pathname === "/taxi/drift" ? "menu__item-active" : ""}`} to="/taxi/drift">Дрифт-такси</Link>
+      <Link className={`menu__item ${location.pathname === "/taxi/timeattack" ? "menu__item-active" : ""}`} to="/taxi/timeattack">Time Attack</Link>
+      <Link className={`menu__item ${location.pathname === "/taxi/forza" ? "menu__item-active" : ""}`} to="/taxi/forza">Forza Karting</Link>
+    </nav>
+  );
+}
+export default Menu;
+```
+![alt text](./assets/routerexample0.png)
+![alt text](./assets/routerexample1.png)
+В будущих обновлениях:  useEffect( работа с таймером и асинхронкой), продвинутые хуки(типо useReducer и useMemo), использование вместе с typescript(по сути здесь просто рассказать, что можно использовать typescript и разграничить приложение с примерами на хуках и функциях)
